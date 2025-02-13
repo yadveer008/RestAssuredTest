@@ -1,4 +1,4 @@
-package com.test;
+package com.rest.test;
 
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
@@ -7,7 +7,6 @@ import io.restassured.specification.RequestSpecification;
 import org.testng.annotations.Test;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.requestSpecification;
 
 @Test
 public class MainTest {
