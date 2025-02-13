@@ -9,6 +9,7 @@ import org.testng.annotations.Test;
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.requestSpecification;
 
+@Test
 public class MainTest {
 
     RequestSpecification requestSpecification;
