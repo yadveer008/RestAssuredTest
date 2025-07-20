@@ -1,6 +1,7 @@
 package com.rest.test;
 
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import org.testng.annotations.Test;
 
@@ -13,11 +14,15 @@ public class MainTest {
 
     @Test
     public void testGetBooks() {
-        given()
+        Response response = given()
             .auth().basic("user", "password")
         .when()
-            .get(baseUrl)
-        .then()
+            .get(baseUrl);
+
+        System.out.println("GET /books Response Code: " + response.statusCode());
+        System.out.println("Response Body: " + response.asPrettyString());
+
+        response.then()
             .statusCode(200)
             .body("$", not(empty()));
     }
@@ -26,11 +31,15 @@ public class MainTest {
     public void testGetBookById() {
         int bookId = 1;
 
-        given()
+        Response response = given()
             .auth().basic("user", "password")
         .when()
-            .get(baseUrl + "/" + bookId)
-        .then()
+            .get(baseUrl + "/" + bookId);
+
+        System.out.println("GET /books/" + bookId + " Response Code: " + response.statusCode());
+        System.out.println("Response Body: " + response.asPrettyString());
+
+        response.then()
             .statusCode(anyOf(is(200), is(404)));
     }
 
@@ -44,20 +53,19 @@ public class MainTest {
             }
             """;
 
-        ValidatableResponse response = given()
+        Response response = given()
             .auth().basic("admin", "password")
             .contentType("application/json")
             .body(requestBody)
         .when()
-            .post(baseUrl)
-        .then();
+            .post(baseUrl);
 
-        int statusCode = response.extract().statusCode();
-        if (statusCode == 201) {
-            response.body("name", equalTo("The Pragmatic Programmer"));
-        } else {
-            System.out.println("Create Book Failed. Status: " + statusCode);
-            System.out.println("Response: " + response.extract().asString());
+        System.out.println("POST /books Response Code: " + response.statusCode());
+        System.out.println("Request Body: " + requestBody);
+        System.out.println("Response Body: " + response.asPrettyString());
+
+        if (response.statusCode() == 201) {
+            response.then().body("name", equalTo("The Pragmatic Programmer"));
         }
     }
 
@@ -69,14 +77,18 @@ public class MainTest {
             }
             """;
 
-        given()
+        Response response = given()
             .auth().basic("admin", "password")
             .contentType("application/json")
             .body(requestBody)
         .when()
-            .post(baseUrl)
-        .then()
-            .statusCode(400);
+            .post(baseUrl);
+
+        System.out.println("POST /books (missing fields) Response Code: " + response.statusCode());
+        System.out.println("Request Body: " + requestBody);
+        System.out.println("Response Body: " + response.asPrettyString());
+
+        response.then().statusCode(400);
     }
 
     @Test
@@ -89,14 +101,18 @@ public class MainTest {
             }
             """;
 
-        given()
+        Response response = given()
             .auth().basic("admin", "password")
             .contentType("application/json")
             .body(requestBody)
         .when()
-            .post(baseUrl)
-        .then()
-            .statusCode(400);
+            .post(baseUrl);
+
+        System.out.println("POST /books (negative price) Response Code: " + response.statusCode());
+        System.out.println("Request Body: " + requestBody);
+        System.out.println("Response Body: " + response.asPrettyString());
+
+        response.then().statusCode(400);
     }
 
     @Test
@@ -112,14 +128,18 @@ public class MainTest {
             }
             """;
 
-        given()
+        Response response = given()
             .auth().basic("admin", "password")
             .contentType("application/json")
             .body(updateBody)
         .when()
-            .put(baseUrl + "/" + bookId)
-        .then()
-            .statusCode(anyOf(is(200), is(500)));
+            .put(baseUrl + "/" + bookId);
+
+        System.out.println("PUT /books/" + bookId + " Response Code: " + response.statusCode());
+        System.out.println("Request Body: " + updateBody);
+        System.out.println("Response Body: " + response.asPrettyString());
+
+        response.then().statusCode(anyOf(is(200), is(500)));
     }
 
     @Test
@@ -135,82 +155,101 @@ public class MainTest {
             }
             """;
 
-        given()
+        Response response = given()
             .auth().basic("admin", "password")
             .contentType("application/json")
             .body(updateBody)
         .when()
-            .put(baseUrl + "/" + bookId)
-        .then()
-            .statusCode(anyOf(is(404), is(500)));
+            .put(baseUrl + "/" + bookId);
+
+        System.out.println("PUT /books/" + bookId + " Response Code: " + response.statusCode());
+        System.out.println("Request Body: " + updateBody);
+        System.out.println("Response Body: " + response.asPrettyString());
+
+        response.then().statusCode(anyOf(is(404), is(500)));
     }
 
     @Test
     public void testDeleteBook() {
         int bookIdToDelete = 3;
 
-        given()
+        Response deleteResponse = given()
             .auth().basic("admin", "password")
         .when()
-            .delete(baseUrl + "/" + bookIdToDelete)
-        .then()
-            .statusCode(anyOf(is(200), is(500)));
+            .delete(baseUrl + "/" + bookIdToDelete);
 
-        given()
+        System.out.println("DELETE /books/" + bookIdToDelete + " Response Code: " + deleteResponse.statusCode());
+        System.out.println("Response Body: " + deleteResponse.asPrettyString());
+
+        deleteResponse.then().statusCode(anyOf(is(200), is(500)));
+
+        Response verifyResponse = given()
             .auth().basic("admin", "password")
         .when()
-            .get(baseUrl + "/" + bookIdToDelete)
-        .then()
-            .statusCode(404);
+            .get(baseUrl + "/" + bookIdToDelete);
+
+        System.out.println("GET /books/" + bookIdToDelete + " (verify deletion) Response Code: " + verifyResponse.statusCode());
+
+        verifyResponse.then().statusCode(404);
     }
 
     @Test
     public void testDeleteBookTwice() {
         int bookId = 5;
 
-        given()
+        Response firstDelete = given()
             .auth().basic("admin", "password")
         .when()
-            .delete(baseUrl + "/" + bookId)
-        .then()
-            .statusCode(anyOf(is(200), is(500)));
+            .delete(baseUrl + "/" + bookId);
 
-        given()
+        System.out.println("1st DELETE /books/" + bookId + " Response Code: " + firstDelete.statusCode());
+
+        firstDelete.then().statusCode(anyOf(is(200), is(500)));
+
+        Response secondDelete = given()
             .auth().basic("admin", "password")
         .when()
-            .delete(baseUrl + "/" + bookId)
-        .then()
-            .statusCode(anyOf(is(404), is(500)));
+            .delete(baseUrl + "/" + bookId);
+
+        System.out.println("2nd DELETE /books/" + bookId + " Response Code: " + secondDelete.statusCode());
+
+        secondDelete.then().statusCode(anyOf(is(404), is(500)));
     }
 
     @Test
     public void testGetInvalidBookId() {
         int invalidId = 9999;
 
-        given()
+        Response response = given()
             .auth().basic("user", "password")
         .when()
-            .get(baseUrl + "/" + invalidId)
-        .then()
-            .statusCode(404);
+            .get(baseUrl + "/" + invalidId);
+
+        System.out.println("GET /books/" + invalidId + " Response Code: " + response.statusCode());
+
+        response.then().statusCode(404);
     }
 
     @Test
     public void testGetBooksInvalidCredentials() {
-        given()
+        Response response = given()
             .auth().basic("invalid", "wrong")
         .when()
-            .get(baseUrl)
-        .then()
-            .statusCode(401);
+            .get(baseUrl);
+
+        System.out.println("GET /books with invalid credentials Response Code: " + response.statusCode());
+
+        response.then().statusCode(401);
     }
 
     @Test
     public void testUnauthorizedAccess() {
-        given()
+        Response response = given()
         .when()
-            .get(baseUrl)
-        .then()
-            .statusCode(401);
+            .get(baseUrl);
+
+        System.out.println("GET /books without authentication Response Code: " + response.statusCode());
+
+        response.then().statusCode(401);
     }
 }
